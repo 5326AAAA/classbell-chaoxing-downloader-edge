@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ClassBell · 课程资料下载</title><link rel="stylesheet" href="manager.css"></head>
+<body>
+  <header><div class="brand"><img src="icons/48.png" width="38" height="38" alt=""><div><h1>ClassBell <span>课程资料下载</span></h1><p>从已登录的学习通课程，保存到你选择的文件夹</p></div></div><span class="badge" id="versionBadge">Edge · 本地保存</span></header>
+  <main>
+    <section class="setup" aria-label="下载设置">
+      <div class="step"><span class="number">1</span><div class="grow"><h2>选择课程页面</h2><div class="row"><select id="source" aria-label="已打开的学习通页面"><option value="">先在 Edge 中登录学习通，打开课程的“资料”</option></select><button id="refreshTabs" title="刷新已打开的学习通页面">刷新页面列表</button><button id="read" class="primary">读取资料</button></div><p class="hint" id="courseHint">在同一个 Edge 配置文件中打开课程。此处读取你有权访问的资料区。</p><details class="manual"><summary>使用课程资料页链接</summary><div class="row"><input id="courseUrl" type="url" placeholder="https://…chaoxing.com/…?courseid=…&amp;clazzid=…&amp;cpi=…" aria-label="课程资料页完整链接"><button id="clearUrl" aria-label="清空课程链接" disabled>清空</button><button id="readUrl">读取链接</button></div></details></div></div>
+      <div class="step"><span class="number">2</span><div class="grow"><h2>选择保存位置</h2><div class="row"><button id="pickFolder">选择文件夹…</button><button id="grantFolder" hidden>重新授权上次文件夹</button><strong id="folderName">尚未选择</strong></div><p class="hint" id="folderHint">点击后会打开系统文件夹选择器。浏览器会保存目录选择，写入权限可能需要再次确认。</p></div></div>
+      <div class="step"><span class="number">3</span><div class="grow"><h2>下载选项</h2><div class="row options"><label>保存子文件夹 <input id="rootName" value="课程资料" maxlength="120"></label><label>文件版本 <select id="mode"><option value="auto">原文件优先，失败尝试 PDF</option><option value="original">仅原文件</option><option value="pdf">仅 PDF（需预览提供）</option></select></label><label>重名文件 <select id="conflict"><option value="rename">加序号保留两份</option><option value="skip">跳过同名文件</option></select></label><label>同时下载 <select id="concurrency"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label></div></div></div>
+    </section>
+    <div id="notice" class="notice" role="status" aria-live="polite">准备就绪。读取资料后，可按文件或整个文件夹勾选。</div>
+    <div id="warnings" class="warnings" hidden></div>
+    <div class="workspace">
+      <section class="panel materials"><div class="panel-heading"><h2>课程资料 <span id="fileCount">0 项</span></h2><input id="search" type="search" placeholder="搜索文件或目录" aria-label="搜索资料"></div><div class="toolbar"><label><input id="selectAll" type="checkbox"> 全选全部资料</label><button id="clearSelection" class="quiet">清空选择</button><button id="collapseAll" class="quiet" disabled>全部折叠</button><button id="expandAll" class="quiet" disabled>全部展开</button><span id="selectedCount">已选 0 项</span></div><div class="selection-summary"><strong id="selectedSize" role="status" aria-live="polite" title="1 MB 按 1,048,576 字节计算；网页显示大小可能已经四舍五入。">总大小 0 MB</strong><small>按网页原文件大小汇总，PDF 版本可能不同</small></div><div id="tree" class="tree"><div class="empty"><span>▤</span><p>课程资料会显示在这里</p><small>先打开课程中的“资料”页面，再点击读取资料</small></div></div></section>
+    <section class="panel transfers"><div class="panel-heading"><h2>下载进度</h2><button id="exportReport" class="quiet" disabled>导出记录</button></div><div class="summary" id="summary">尚未开始下载</div><progress id="batchProgress" max="1" value="0" aria-label="批次完成进度"></progress><p class="hint transfer-hint">请保留扩展标签页、原课程页和 Edge。每项失败最多自动重试 2 次。</p><div id="tasks" class="tasks"><div class="empty"><p>勾选资料后开始下载</p></div></div></section>
+    </div>
+    <footer><div><strong id="destination">请选择保存文件夹</strong><p id="lastRun" class="hint">保留课程目录结构 · 成功写入后才计入已保存</p></div><div class="row"><button id="retry" disabled>重试失败 / 取消项</button><button id="cancel" class="danger" disabled>取消任务</button><button id="start" class="primary" disabled>下载所选资料</button></div></footer>
+    <details class="help"><summary>安装后首次使用 / 范围与权限</summary><p>在同一个 Edge 配置文件中登录学习通，打开课程的“资料”，从扩展图标进入本页面。点击“选择文件夹”并允许写入，然后勾选资料下载。只展示浏览器实际授权的目录名称，完整磁盘路径由系统选择器确认。</p><p>支持官方 chaoxing.com 课程资料区及子目录、ClassBell ananas 原文件 / PDF 解析。学校独立域名、章节任务点、个人云盘需单独适配。目录或分页未识别时会提示，不能将提示中的部分结果当成完整课程。下载不记录密码、Cookie、临时下载链接或签名参数。</p><p>关闭标签页或浏览器会中断任务。再次打开后重新读取资料，按需要选择重名策略；同名跳过只比较名称，不核对内容。</p></details>
+  </main>
+  <script type="module" src="manager.js"></script>
+</body></html>
