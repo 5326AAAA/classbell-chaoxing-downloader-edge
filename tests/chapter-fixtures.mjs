@@ -1,0 +1,7 @@
+export const chapterOverview=`<div class="chapter_unit"><div class="chapter_item"><div class="catalog_num">1</div><a class="clicktitle">示例第一章</a></div>
+<ul><li><div class="chapter_item" id="cur11"><a class="clicktitle"><span class="catalog_sbar">1.1</span>含两张课件</a></div>
+<ul><li><div class="chapter_item" id="cur111"><a class="clicktitle"><span class="catalog_sbar">1.1.1</span>同一文件在别节</a></div></li></ul></li>
+<li><div class="chapter_item" id="cur12"><a class="clicktitle"><span class="catalog_sbar">1.2</span>未开放</a></div></li></ul></div>`;
+export const chapterSidebar=`<div id="coursetree"><ul><li><div class="posCatalog_select" id="1"><span class="posCatalog_title"><em class="posCatalog_sbar">1</em>示例第一章</span></div><ul><li><div class="posCatalog_select" id="cur11"><span class="posCatalog_name"><em class="posCatalog_sbar">1.1</em>含两张课件</span></div></li></ul></li></ul></div>`;
+export const chapterStudy=(id,count=1)=>`<div id="prev_tab"><ul>${Array.from({length:count},(_,i)=>`<li id="dct${i+1}" cardid="${id}${i}"></li>`).join('')}</ul></div><iframe src="/mooc-ans/knowledge/cards?courseid=101&amp;clazzid=202&amp;cpi=303&amp;knowledgeid=${id}&amp;num=0"></iframe>`;
+export const chapterCard=(id='e'.repeat(32),name='课件.ppt',extra='')=>`<div class="ans-cc"><iframe class="ans-attach-online insertdoc-online-ppt" module="pdf" data='${JSON.stringify({objectid:id,title:name,name:'server.ppt',type:'.ppt',size:1048576,download:'0'})}'></iframe>${extra}</div>`;
