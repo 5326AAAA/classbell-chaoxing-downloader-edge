@@ -2,6 +2,7 @@ import {Problem,allFiles,planTree,selectNode,selectionState,selectionSize,format
 import {inspectPage,contextsFromSnapshots} from './lib/page.js';
 import {Network,configureReferer} from './lib/network.js';
 import {Catalog} from './lib/catalog.js';
+import {ChapterCatalog} from './lib/chapters.js';
 import {FolderWriter} from './lib/filesystem.js';
 import {DownloadQueue} from './lib/engine.js';
 import {getSetting,setSetting} from './lib/storage.js';
@@ -16,7 +17,7 @@ function notice(message,error=false){$('notice').textContent=message;$('notice')
 function busy(value){state.busy=value;updateControls();}
 function updateControls(){
   const active=Boolean(state.busy);
-  for(const id of ['read','readUrl','clearUrl','source','refreshTabs','rootName','mode','conflict','concurrency','pickFolder','grantFolder','clearSelection','selectAll','courseUrl'])$(id).disabled=active;
+  for(const id of ['read','readUrl','clearUrl','source','scope','refreshTabs','rootName','mode','conflict','concurrency','pickFolder','grantFolder','clearSelection','selectAll','courseUrl'])$(id).disabled=active;
   $('clearUrl').disabled=active || !$('courseUrl').value;
   $('collapseAll').disabled=$('expandAll').disabled=state.busy==='scan' || !state.nodes.some(n=>n.kind==='folder');
   $('cancel').disabled=!active;
@@ -75,17 +76,19 @@ async function withLock(operation){
   });
 }
 async function readCourse(course){
-  network.source=course.sessionRef?new PageSource(course.sessionRef):null;
+  network.source=course.sessionRefs?.length?new PageSource(course.sessionRefs):course.sessionRef?new PageSource(course.sessionRef):null;
   state.course=course;state.nodes=[];state.selected.clear();state.collapsedFolders.clear();state.history.clear();state.taskElements.clear();renderTasks();renderTree();
-  $('rootName').value=sanitizeName(course.startName || course.name || '课程资料');$('courseHint').textContent=`课程 ${course.courseId} · ${course.startFolder?'读取当前资料目录及子目录':'读取官方资料区及子目录'}`;
+  const chapters=$('scope').value==='chapters';
+  $('rootName').value=sanitizeName(chapters?(course.name+' · 章节课件'):(course.startName || course.name || '课程资料'));$('courseHint').textContent=`课程 ${course.courseId} · ${chapters?'读取整课章节中的文档课件，按章/节保存':course.startFolder?'读取当前资料目录及子目录':'读取官方资料区及子目录'}`;
   $('warnings').hidden=true;state.scanController=new AbortController();busy('scan');
   try{
     await withLock(async()=>{
       await configureReferer(course.origin);
-      const catalog=new Catalog(network,course,{onProgress:p=>notice(`正在读取：${p.path} · 已发现 ${p.count} 项文件 / 文件夹`)});
+      const CatalogType=chapters?ChapterCatalog:Catalog;
+      const catalog=new CatalogType(network,course,{onProgress:p=>notice(`正在读取：${p.path} · 已发现 ${p.count} 项文件${chapters?'':' / 文件夹'}`)});
       const result=await catalog.scan(state.scanController.signal);state.catalog=catalog;state.nodes=result.nodes;
       if(result.warnings.length){$('warnings').hidden=false;$('warnings').textContent='部分目录需要核对：\n'+result.warnings.join('\n');}
-      notice(`已读取 ${allFiles(result.nodes).length} 项文件${result.warnings.length?'，部分目录未完整读取，请查看提示':''}。勾选要下载的资料。`);
+      notice(`已读取 ${allFiles(result.nodes).length} 项文件${result.warnings.length?'，部分目录未完整读取，请查看提示':''}。勾选要下载的资料。${result.skippedCards?`另有 ${result.skippedCards} 个音视频卡片已略过。`:''}`);
     });
   }catch(e){notice(isAbort(e)?'已取消资料读取。可重新读取。':safeError(e),!isAbort(e));}
   finally{busy('');renderTree();updateControls();}
@@ -99,7 +102,7 @@ async function readTab(){
     snapshots=results.filter(r=>r.result).map(r=>({...r.result,frameId:r.frameId,tabId}));
   }catch{throw new Problem('无法读取此页面。请刷新课程资料页，检查扩展的学习通网站访问权限后再试');}
   finally{busy('');}
-  const courses=contextsFromSnapshots(snapshots);
+  const courses=contextsFromSnapshots(snapshots,$('scope').value);
   if(!courses.length)throw new Problem('未找到课程参数。请在课程中点击“资料”，等待载入后再读取');
   await readCourse(courses[0]);
 }
@@ -167,6 +170,17 @@ click('collapseAll',()=>setAllFoldersCollapsed(true));click('expandAll',()=>setA
 click('readUrl',async()=>{
   const c=courseFromURL($('courseUrl').value);if(!c)throw new Problem('请输入包含 courseid、clazzid / classId、cpi 的官方课程资料页 HTTPS 链接');
   c.materialLinks=/coursedata/.test(c.sourceURL)?[c.sourceURL]:[];
+  if($('scope').value==='chapters'){
+    const opened=await chrome.tabs.query({url:['https://*.chaoxing.com/*']});
+    for(const tab of opened.filter(t=>{const v=courseFromURL(t.url);return v && v.courseId===c.courseId && v.classId===c.classId && v.cpi===c.cpi;}).slice(0,3)){
+      try{
+        const results=await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},func:inspectPage});
+        const snapshots=results.filter(r=>r.result).map(r=>({...r.result,frameId:r.frameId,tabId:tab.id}));
+        const live=contextsFromSnapshots(snapshots,'chapters').find(v=>v.courseId===c.courseId && v.classId===c.classId && v.cpi===c.cpi);
+        if(live?.chapterHTML)return readCourse(live);
+      }catch{}
+    }
+  }
   const tabs=await chrome.tabs.query({url:[c.origin+'/*']});
   if(tabs[0])c.sessionRef={tabId:tabs[0].id,frameId:0,origin:c.origin};
   return readCourse(c);

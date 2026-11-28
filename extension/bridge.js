@@ -17,7 +17,8 @@
           opened=true;const u=new URL(message.url);
           const data=/^\/(?:mooc2-ans\/(?:mooc2-ans\/)?|mooc-ans\/)?coursedata(?:\/(?:stu-datalist|toPreview|downloadData))?\/?$/i.test(u.pathname);
           const status=/^\/(?:mooc-ans\/)?ananas\/status\/[a-f0-9]{32}$/i.test(u.pathname);
-          if(u.origin!==location.origin || u.protocol!=='https:' || u.username || u.password || u.hash || !(data || status)){
+          const chapter=/^\/(?:mooc2-ans\/|mooc-ans\/)?(?:mycourse\/(?:stu|studentcourse|studentstudy|studentstudyAjax)|knowledge\/cards)\/?$/i.test(u.pathname);
+          if(u.origin!==location.origin || u.protocol!=='https:' || u.username || u.password || u.hash || !(data || status || chapter)){
             send({kind:'error',code:'source',message:'页面请求地址无效'});return;
           }
           const r=await fetch(u.href,{method:'GET',credentials:'include',cache:'no-store',redirect:'follow',signal:controller.signal,

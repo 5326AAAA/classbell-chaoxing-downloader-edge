@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ClassBell 课程资料下载",
   "description": "在已登录的学习通课程中选择资料，保留目录并保存到授权文件夹。",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "minimum_chrome_version": "120",
   "permissions": ["activeTab", "scripting", "storage", "webRequest", "declarativeNetRequestWithHostAccess"],
   "host_permissions": ["https://*.chaoxing.com/*", "https://*.cldisk.com/*"],
