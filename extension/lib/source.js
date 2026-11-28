@@ -1,10 +1,10 @@
 import {Problem,guard,fileURL,officialURL} from './core.js';
 
 export class PageSource {
-  constructor(ref){this.ref=ref;}
-  accepts(url){const u=officialURL(url);return u?.origin===this.ref.origin && /\/(?:coursedata(?:\/|$)|ananas\/status\/)/.test(u.pathname);}
+  constructor(ref){this.refs=Array.isArray(ref)?ref:[ref];this.ref=this.refs[0];}
+  accepts(url){const u=officialURL(url);return this.refs.some(ref=>u?.origin===ref.origin) && /\/(?:coursedata(?:\/|$)|ananas\/status\/|mycourse\/(?:stu|studentcourse|studentstudy|studentstudyAjax)(?:\/|$)|knowledge\/cards(?:\/|$))/.test(u.pathname);}
   async open(url,signal,{metadata=false}={}) {
-    guard(signal);const {tabId,frameId}=this.ref;
+    guard(signal);const ref=this.refs.find(r=>r.origin===new URL(url).origin);if(!ref)throw new Problem('没有对应的课程页面通道',{code:'source'});const {tabId,frameId}=ref;
     try{await chrome.scripting.executeScript({target:{tabId,frameIds:[frameId]},files:['bridge.js']});}
     catch{throw new Problem('课程标签页已关闭、跳转或失去访问权限，请重新打开资料页并读取',{code:'source'});}
     guard(signal);
@@ -28,7 +28,7 @@ export class PageSource {
           if(!next || officialURL(next.href))return;
           if(!settled){settled=true;resolve({redirect:next.href});}close();
         };
-        chrome.webRequest.onBeforeRedirect.addListener(redirectListener,{urls:[this.ref.origin+'/*'],types:['xmlhttprequest']});
+        chrome.webRequest.onBeforeRedirect.addListener(redirectListener,{urls:[ref.origin+'/*'],types:['xmlhttprequest']});
       }
       try{port=chrome.tabs.connect(tabId,{frameId,name:'classbell-material-stream'});}catch{fail(new Problem('课程请求通道未连接，请重新读取课程',{code:'source'}));return;}
       port.onDisconnect.addListener(()=>{

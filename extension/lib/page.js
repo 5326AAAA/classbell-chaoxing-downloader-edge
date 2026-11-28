@@ -79,15 +79,18 @@ export function inspectPage() {
     try {
       const u=new URL(el.getAttribute('href') || el.getAttribute('src'),location.href);
       if(u.protocol==='https:' && (u.hostname==='chaoxing.com' || u.hostname.endsWith('.chaoxing.com')) &&
-        (/coursedata|mycourse\/stu|stucoursemiddle/.test(u.pathname))) links.push(u.href);
+        (/coursedata|mycourse\/stu|knowledge\/cards|stucoursemiddle/.test(u.pathname))) links.push(u.href);
     } catch{}
   }
-  return {url:location.href,title:document.title,fields,links:[...new Set(links)].slice(0,100)};
+  const chapterRoots=[...document.querySelectorAll('#coursetree, .chapter_unit')];
+  const chapterHTML=chapterRoots.map(e=>e.outerHTML).join('\n').slice(0,4*1024*1024);
+  return {url:location.href,title:document.title,fields,links:[...new Set(links)].slice(0,100),chapterHTML};
 }
-export function contextsFromSnapshots(snapshots) {
+export function contextsFromSnapshots(snapshots,scope='materials') {
   const found=[];const keys=new Set();
   // Prefer the actual data frame so its signed parameters are retained.
-  for(const s of snapshots.filter(Boolean).sort((a,b)=>Number(/coursedata/.test(b.url))-Number(/coursedata/.test(a.url)))) {
+  const score=s=>scope==='chapters'?Number(Boolean(s.chapterHTML))*2+Number(/studentstudy/.test(s.url)):Number(/coursedata/.test(s.url));
+  for(const s of snapshots.filter(Boolean).sort((a,b)=>score(b)-score(a))) {
     for(const value of [s.url,...s.links]) {
       const c=courseFromURL(value,s.fields,s.title);
       if(!c)continue;
@@ -98,6 +101,13 @@ export function contextsFromSnapshots(snapshots) {
       });
       const session=snapshots.find(t=>t && t.tabId && new URL(t.url).origin===c.origin);
       if(session)c.sessionRef={tabId:session.tabId,frameId:session.frameId || 0,origin:c.origin};
+      const related=snapshots.filter(t=>{
+        if(!t)return false;const v=courseFromURL(t.url,t.fields);return v && v.courseId===c.courseId && v.classId===c.classId;
+      });
+      c.sessionRefs=[...new Map(related.filter(t=>t.tabId).map(t=>[new URL(t.url).origin,{tabId:t.tabId,frameId:t.frameId || 0,origin:new URL(t.url).origin}])).values()];
+      c.chapterHTML=related.find(t=>t.chapterHTML)?.chapterHTML || '';
+      c.chapterLinks=[...new Set(related.flatMap(t=>[t.url,...t.links]))].filter(u=>/\/mycourse\/(?:stu|studentcourse|studentstudy)(?:\?|$)/.test(u));
+      c.cardPages=[...new Set(related.flatMap(t=>[t.url,...t.links]))].filter(u=>/\/knowledge\/cards(?:\?|$)/.test(u));
       found.push(c);
     }
   }
